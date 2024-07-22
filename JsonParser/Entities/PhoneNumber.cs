@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace JsonParser.JsonParser.Domain.Entities;
+namespace JsonParser.Entities;
 
 /// <summary>
 /// Номер телефона для тестов

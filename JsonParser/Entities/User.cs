@@ -1,6 +1,6 @@
-using JsonParser.JsonParser.Domain.Attributes;
+using JsonParser.Attributes;
 
-namespace JsonParser.JsonParser.Domain.Entities;
+namespace JsonParser.Entities;
 
 /// <summary>
 /// Пользователь для тестов

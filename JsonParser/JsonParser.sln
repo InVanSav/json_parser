@@ -2,10 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonParser", "JsonParser.csproj", "{B4BB840F-6B4B-41B1-8D81-BFC0ADC08702}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonParser.Domain", "JsonParser.Domain\JsonParser.Domain.csproj", "{F7599E1D-F61C-4F15-9120-3E6D9C81FD39}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonParser.Application", "JsonParser.Application\JsonParser.Application.csproj", "{87A88D32-D53B-4112-A41F-B2FA0A6894FE}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,13 +12,5 @@ Global
 		{B4BB840F-6B4B-41B1-8D81-BFC0ADC08702}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4BB840F-6B4B-41B1-8D81-BFC0ADC08702}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4BB840F-6B4B-41B1-8D81-BFC0ADC08702}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F7599E1D-F61C-4F15-9120-3E6D9C81FD39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F7599E1D-F61C-4F15-9120-3E6D9C81FD39}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F7599E1D-F61C-4F15-9120-3E6D9C81FD39}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F7599E1D-F61C-4F15-9120-3E6D9C81FD39}.Release|Any CPU.Build.0 = Release|Any CPU
-		{87A88D32-D53B-4112-A41F-B2FA0A6894FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{87A88D32-D53B-4112-A41F-B2FA0A6894FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{87A88D32-D53B-4112-A41F-B2FA0A6894FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{87A88D32-D53B-4112-A41F-B2FA0A6894FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

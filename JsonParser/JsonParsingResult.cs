@@ -1,10 +1,10 @@
-namespace JsonParser.JsonParser.Domain;
+namespace JsonParser;
 
 /// <summary>
 /// Класс-обертка для возвращения результата выполнения метода
 /// </summary>
 /// <typeparam name="T">Тип возвращаемых данных, если метод завершится успехом</typeparam>
-public class JsonSerializationResult<T>
+public class JsonParsingResult<T>
 {
     /// <summary>
     /// Свойство, указывающее на успешность операции
@@ -22,9 +22,9 @@ public class JsonSerializationResult<T>
     public T Data { get; private set; }
 
     /// <summary>
-    /// <inheritdoc cref="JsonSerializationResult{T}"/>
+    /// <inheritdoc cref="JsonParsingResult{T}"/>
     /// </summary>
-    private JsonSerializationResult(bool isSuccess, IReadOnlyCollection<string>? errorMessages = null, T data = default(T))
+    private JsonParsingResult(bool isSuccess, IReadOnlyCollection<string>? errorMessages = null, T data = default(T))
     {
         IsSuccess = isSuccess;
         ErrorMessages = errorMessages;
@@ -35,17 +35,17 @@ public class JsonSerializationResult<T>
     /// Фабричный метод для создания успешного результата
     /// </summary>
     /// <param name="data">Данные, которые необходимо вернуть</param>
-    public static JsonSerializationResult<T> Success(T data = default(T))
+    public static JsonParsingResult<T> Success(T data = default(T))
     {
-        return new JsonSerializationResult<T>(true, null, data);
+        return new JsonParsingResult<T>(true, null, data);
     }
 
     /// <summary>
     /// Фабричный метод для создания результата с ошибкой
     /// </summary>
     /// <param name="errorMessages">Сообщение ошибки</param>
-    public static JsonSerializationResult<T> Failure(IReadOnlyCollection<string>? errorMessages)
+    public static JsonParsingResult<T> Failure(IReadOnlyCollection<string>? errorMessages)
     {
-        return new JsonSerializationResult<T>(false, errorMessages);
+        return new JsonParsingResult<T>(false, errorMessages);
     }
 }
