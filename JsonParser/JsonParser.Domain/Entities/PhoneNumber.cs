@@ -5,30 +5,30 @@ namespace JsonParser.JsonParser.Domain.Entities;
 /// <summary>
 /// Номер телефона для тестов
 /// </summary>
-public class PhoneNumber
+public static class PhoneNumber
 {
     /// <summary>
-    /// Номер телефона
+    /// Регулярное выражение для проверки формата номера телефона
     /// </summary>
-    public string Phone { get; }
+    private static readonly Regex PhoneNumberRegex = new Regex(@"^(\+7|8)[\s-]?(\d{3})[\s-]?(\d{3})[\s-]?(\d{2})[\s-]?(\d{2})$", RegexOptions.Compiled);
 
-    /// <summary>
-    /// <inheritdoc cref="PhoneNumber"/>
-    /// </summary>
-    public PhoneNumber(string phone)
+    public static bool TryParse(string input, out string? phoneNumber)
     {
-        Phone = phone;
-    }
+        phoneNumber = null;
 
-    /// <summary>
-    /// Нормализовать номер телефона
-    /// </summary>
-    public Result<string> Normalize()
-    {
-        var match = Regex.Match(Phone, @"^8\s?\(?(\d{3})\)?\s?(\d{3})-?(\d{2})-?(\d{2})$");
-        if (!match.Success)
-            return Result<string>.Failure("Передан некорректный номер телефона");
+        // Убираем пробелы, скобки и дефисы для проверки
+        var cleanedInput = input
+            .Replace(" ", "")
+            .Replace("-", "")
+            .Replace("(", "")
+            .Replace(")", "");
 
-        return Result<string>.Success($"7{match.Groups[1].Value}{match.Groups[2].Value}{match.Groups[3].Value}{match.Groups[4].Value}");
+        // Проверяем, что строка не пустая и соответствует регулярному выражению
+        if (string.IsNullOrEmpty(cleanedInput) || !PhoneNumberRegex.IsMatch(cleanedInput))
+            return false;
+
+        phoneNumber = cleanedInput;
+
+        return true;
     }
 }
