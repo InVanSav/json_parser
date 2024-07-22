@@ -49,3 +49,45 @@ public class Result<T>
         return new Result<T>(false, errorMessage);
     }
 }
+
+/// <summary>
+/// Класс-обертка для возвращения результата выполнения метода
+/// </summary>
+public class Result
+{
+    /// <summary>
+    /// Свойство, указывающее на успешность операции
+    /// </summary>
+    public bool IsSuccess { get; private set; }
+
+    /// <summary>
+    /// Свойство для хранения сообщения об ошибке в случае неудачи
+    /// </summary>
+    public string? ErrorMessage { get; private set; }
+
+    /// <summary>
+    /// <inheritdoc cref="Result"/>
+    /// </summary>
+    private Result(bool isSuccess, string? errorMessage = null)
+    {
+        IsSuccess = isSuccess;
+        ErrorMessage = errorMessage;
+    }
+
+    /// <summary>
+    /// Фабричный метод для создания успешного результата
+    /// </summary>
+    public static Result Success()
+    {
+        return new Result(true);
+    }
+
+    /// <summary>
+    /// Фабричный метод для создания результата с ошибкой
+    /// </summary>
+    /// <param name="errorMessage">Сообщение ошибки</param>
+    public static Result Failure(string? errorMessage)
+    {
+        return new Result(false, errorMessage);
+    }
+}
