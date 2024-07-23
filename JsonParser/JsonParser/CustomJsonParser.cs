@@ -77,7 +77,11 @@ public static class CustomJsonParser
             else
                 errors.Add($"Свойство {prop.Name}: не является числом с плавающей запятой.");
         }
-        else if (IsComplexType(prop))
+        else if (IsEnumerableType(prop))
+        {
+            value = ParseEnumerable(prop, jsonProp, errors);
+        }
+        else if (IsComplexType(prop.PropertyType))
         {
             var method = typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(prop.PropertyType);
             var sanitizeResult = method?.Invoke(null, new object[] { jsonProp.GetRawText() }) as dynamic;
@@ -91,8 +95,73 @@ public static class CustomJsonParser
         return value;
     }
 
-    private static bool IsComplexType(PropertyInfo prop)
-        => prop.PropertyType is { IsClass: true, IsPrimitive: false } && prop.PropertyType != typeof(string);
+    private static bool IsComplexType(Type type)
+        => type is { IsPrimitive: false, IsClass: true } && type != typeof(string);
+
+    private static bool IsEnumerableType(PropertyInfo prop)
+        => prop.PropertyType.GetInterface(typeof(IEnumerable<>).Name) != null && prop.PropertyType != typeof(string);
+
+    private static dynamic? ParseEnumerable(PropertyInfo prop, JsonElement jsonProp, List<string> errors)
+    {
+        var elementType = prop.PropertyType.IsArray
+            ? prop.PropertyType.GetElementType()
+            : prop.PropertyType.GetGenericArguments().FirstOrDefault();
+
+        if (elementType == null)
+        {
+            errors.Add($"Свойство {prop.Name}: не удалось определить тип элементов.");
+            return null;
+        }
+
+        var listType = typeof(List<>).MakeGenericType(elementType);
+        var list = (dynamic)Activator.CreateInstance(listType)!;
+
+        foreach (var element in jsonProp.EnumerateArray())
+        {
+            var method = typeof(CustomJsonParser).GetMethod("GetValueForEnumerableElement")?.MakeGenericMethod(elementType);
+            var elementResult = method?.Invoke(null, new object[] { element, errors }) as dynamic;
+
+            if (elementResult is not null)
+                list.Add(elementResult);
+        }
+
+        return list;
+    }
+
+    public static dynamic? GetValueForEnumerableElement<T>(JsonElement element, List<string> errors)
+    {
+        if (typeof(T) == typeof(string))
+        {
+            return ParseString(element, errors, "Element");
+        }
+
+        if (typeof(T) == typeof(int))
+        {
+            if (element.TryGetInt32(out var intValue))
+                return intValue;
+
+            errors.Add("Элемент списка: не является целочисленным.");
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            if (element.TryGetDouble(out var doubleValue))
+                return doubleValue;
+
+            errors.Add("Элемент списка: не является числом с плавающей запятой.");
+        }
+        else if (IsComplexType(typeof(T)))
+        {
+            var method = typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(typeof(T));
+            var sanitizeResult = method?.Invoke(null, new object[] { element.GetRawText() }) as dynamic;
+
+            if (sanitizeResult?.IsSuccess)
+                return sanitizeResult.Data;
+
+            errors.AddRange(sanitizeResult.ErrorMessages);
+        }
+
+        return default(T);
+    }
 
     private static string? ParsePhoneNumber(JsonElement jsonProp, List<string> errors)
     {
