@@ -1,4 +1,4 @@
-namespace JsonParser.JsonParser.Tests.Entities;
+namespace JsonParser.Tests.Entities;
 
 /// <summary>
 /// Заказ для тестов

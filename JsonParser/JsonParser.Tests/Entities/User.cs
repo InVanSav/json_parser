@@ -11,8 +11,8 @@ public record User
     [JsonParserPropertyName("age")]
     public int Age { get; init; }
 
-    [JsonParserPropertyName("phone")]
-    public string Phone { get; init; }
+    [JsonParserPropertyName("phoneNumber")]
+    public PhoneNumber PhoneNumber { get; init; }
 
     [JsonParserPropertyName("address")]
     public Address Address { get; init; }

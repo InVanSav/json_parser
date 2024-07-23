@@ -24,11 +24,17 @@ public static class CustomJsonParser
         foreach (var prop in typeof(T).GetProperties())
         {
             var attr = prop.GetCustomAttribute<JsonParserPropertyNameAttribute>();
-            if (attr is null) 
+            if (attr is null)
+            {
+                errors.Add($"Аттрибут свойства {prop.Name}: не найдено.");
                 continue;
+            }
 
             if (!jsonObject.TryGetProperty(attr.Name, out var jsonProp))
+            {
                 errors.Add($"Свойство {prop.Name}: не найдено в JSON.");
+                continue;
+            }
 
             try
             {
@@ -43,7 +49,7 @@ public static class CustomJsonParser
         }
 
         return errors.Count == 0
-            ? JsonParsingResult<T>.Success(result) 
+            ? JsonParsingResult<T>.Success(result)
             : JsonParsingResult<T>.Failure(errors);
     }
 
@@ -53,9 +59,9 @@ public static class CustomJsonParser
 
         if (prop.PropertyType == typeof(string))
         {
-            value = ParseString(jsonProp);
-            if (string.IsNullOrEmpty(value))
-                errors.Add($"Свойство {prop.Name}: не является номером телефона.");
+            value = prop.Name.Equals("phoneNumberText", StringComparison.OrdinalIgnoreCase)
+                ? ParsePhoneNumber(jsonProp, errors)
+                : ParseString(jsonProp, errors, prop.Name);
         }
         else if (prop.PropertyType == typeof(int))
         {
@@ -71,7 +77,7 @@ public static class CustomJsonParser
             else
                 errors.Add($"Свойство {prop.Name}: не является числом с плавающей запятой.");
         }
-        else if (prop.PropertyType is { IsClass: true, IsPrimitive: false } && prop.PropertyType != typeof(string))
+        else if (IsComplexType(prop))
         {
             var method = typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(prop.PropertyType);
             var sanitizeResult = method?.Invoke(null, new object[] { jsonProp.GetRawText() }) as dynamic;
@@ -85,12 +91,27 @@ public static class CustomJsonParser
         return value;
     }
 
-    private static string? ParseString(JsonElement jsonProp)
+    private static bool IsComplexType(PropertyInfo prop)
+        => prop.PropertyType is { IsClass: true, IsPrimitive: false } && prop.PropertyType != typeof(string);
+
+    private static string? ParsePhoneNumber(JsonElement jsonProp, List<string> errors)
     {
         var str = jsonProp.GetString() ?? string.Empty;
 
-        return PhoneNumber.TryParse(str, out var phoneNumber) 
-            ? phoneNumber 
-            : jsonProp.GetString()?.Trim();
+        if (PhoneNumber.TryParse(str, out var phoneNumber))
+            return phoneNumber;
+
+        errors.Add("Свойство PhoneNumberText: не является валидным номером телефона.");
+        return null;
+    }
+
+    private static string ParseString(JsonElement jsonProp, List<string> errors, string propName)
+    {
+        var str = jsonProp.GetString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(str))
+            errors.Add($"Свойство {propName}: строка не может быть пустой или содержать только пробелы.");
+
+        return str.Trim();
     }
 }
