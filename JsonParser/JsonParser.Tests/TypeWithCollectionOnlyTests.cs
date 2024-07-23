@@ -17,15 +17,14 @@ public class TypeWithCollectionOnlyTests
         result.Data.Should().BeEquivalentTo(new Order
         {
             OrderId = "ORD123",
-            Items = new List<OrderItem>
-            {
+            Items = [
                 new OrderItem
                 {
                     ProductName = "Product1",
                     Quantity = 2,
                     Price = 10.0
                 }
-            },
+            ],
             TotalAmount = 20.0
         });
     }

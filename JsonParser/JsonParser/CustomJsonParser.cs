@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Reflection;
 using System.Text.Json;
 
@@ -17,7 +18,7 @@ public static class CustomJsonParser
     public static JsonParsingResult<T> Deserialize<T>(string jsonString)
     {
         if (string.IsNullOrWhiteSpace(jsonString))
-            return JsonParsingResult<T>.Failure(new List<string> {"JSON строка не может быть null."});
+            return JsonParsingResult<T>.Failure(new List<string> { "JSON строка не может быть null." });
 
         var jsonParsingResult = ParseJson(jsonString);
         if (!jsonParsingResult.IsSuccess)
@@ -59,6 +60,18 @@ public static class CustomJsonParser
             : JsonParsingResult<T>.Failure(errors);
     }
 
+    private static JsonParsingResult<JsonElement> ParseJson(string jsonString)
+    {
+        try
+        {
+            return JsonParsingResult<JsonElement>.Success(JsonDocument.Parse(jsonString).RootElement);
+        }
+        catch
+        {
+            return JsonParsingResult<JsonElement>.Failure(new List<string> { "Ошибка парсинга JSON строки." });
+        }
+    }
+
     private static dynamic? GetValue(PropertyInfo prop, JsonElement jsonProp, List<string> errors)
     {
         dynamic? value = null;
@@ -83,13 +96,13 @@ public static class CustomJsonParser
             else
                 errors.Add($"Свойство {prop.Name}: не является числом с плавающей запятой.");
         }
-        else if (IsEnumerableType(prop))
+        else if (prop.PropertyType.IsArray)
         {
-            value = ParseEnumerable(prop, jsonProp, errors);
+            value = ParseArray(prop.PropertyType, jsonProp, errors);
         }
         else if (IsComplexType(prop.PropertyType))
         {
-            var method = typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(prop.PropertyType);
+            var method = GetDeserializer(prop.PropertyType);
             var sanitizeResult = method?.Invoke(null, new object[] { jsonProp.GetRawText() }) as dynamic;
 
             if (sanitizeResult?.IsSuccess)
@@ -101,84 +114,37 @@ public static class CustomJsonParser
         return value;
     }
 
+    private static MethodInfo? GetDeserializer(Type type) 
+        => typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(type);
+
     private static bool IsComplexType(Type type)
         => type is { IsPrimitive: false, IsClass: true } && type != typeof(string);
 
-    private static bool IsEnumerableType(PropertyInfo prop)
-        => prop.PropertyType.GetInterface(typeof(IEnumerable<>).Name) != null && prop.PropertyType != typeof(string);
-
-    private static JsonParsingResult<JsonElement> ParseJson(string jsonString)
+    private static dynamic? ParseArray(Type arrayType, JsonElement jsonProp, List<string> errors)
     {
-        try
+        if (jsonProp.ValueKind != JsonValueKind.Array)
         {
-            return JsonParsingResult<JsonElement>.Success(JsonDocument.Parse(jsonString).RootElement);
-        }
-        catch
-        {
-            return JsonParsingResult<JsonElement>.Failure(new List<string> {"Ошибка парсинга JSON строки."});
-        }
-    }
-
-    private static dynamic? ParseEnumerable(PropertyInfo prop, JsonElement jsonProp, List<string> errors)
-    {
-        var elementType = prop.PropertyType.IsArray
-            ? prop.PropertyType.GetElementType()
-            : prop.PropertyType.GetGenericArguments().FirstOrDefault();
-
-        if (elementType == null)
-        {
-            errors.Add($"Свойство {prop.Name}: не удалось определить тип элементов.");
+            errors.Add("Ожидался массив в JSON, но был найден другой тип.");
             return null;
         }
 
-        var listType = typeof(List<>).MakeGenericType(elementType);
-        var list = (dynamic)Activator.CreateInstance(listType)!;
+        var elementType = arrayType.GetElementType();
+        var listType = typeof(List<>).MakeGenericType(elementType!);
+        var resultList = Activator.CreateInstance(listType) as IList;
+        var method = GetDeserializer(elementType!);
 
         foreach (var element in jsonProp.EnumerateArray())
         {
-            var method = typeof(CustomJsonParser).GetMethod("GetValueForEnumerableElement")?.MakeGenericMethod(elementType);
-            var elementResult = method?.Invoke(null, new object[] { element, errors }) as dynamic;
-
-            if (elementResult is not null)
-                list.Add(elementResult);
+            var itemResult = method?.Invoke(null, new object[] { element.GetRawText() }) as dynamic;
+            if (itemResult?.IsSuccess is true)
+                resultList?.Add(itemResult.Data);
+            else
+                errors.AddRange(itemResult?.ErrorMessages ?? new List<string>());
         }
 
-        return list;
-    }
+        var toArrayMethod = listType.GetMethod("ToArray");
 
-    public static dynamic? GetValueForEnumerableElement<T>(JsonElement element, List<string> errors)
-    {
-        if (typeof(T) == typeof(string))
-        {
-            return ParseString(element, errors, "Element");
-        }
-
-        if (typeof(T) == typeof(int))
-        {
-            if (element.TryGetInt32(out var intValue))
-                return intValue;
-
-            errors.Add("Элемент списка: не является целочисленным.");
-        }
-        else if (typeof(T) == typeof(double))
-        {
-            if (element.TryGetDouble(out var doubleValue))
-                return doubleValue;
-
-            errors.Add("Элемент списка: не является числом с плавающей запятой.");
-        }
-        else if (IsComplexType(typeof(T)))
-        {
-            var method = typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(typeof(T));
-            var sanitizeResult = method?.Invoke(null, new object[] { element.GetRawText() }) as dynamic;
-
-            if (sanitizeResult?.IsSuccess)
-                return sanitizeResult.Data;
-
-            errors.AddRange(sanitizeResult.ErrorMessages);
-        }
-
-        return default(T);
+        return toArrayMethod?.Invoke(resultList, null);
     }
 
     private static string? ParsePhoneNumber(JsonElement jsonProp, List<string> errors)

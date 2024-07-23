@@ -15,7 +15,7 @@ public record Car
     public int WheelCount { get; init; }
 
     [JsonParserPropertyName("model")] 
-    public IReadOnlyCollection<Wheel> Wheels { get; init; }
+    public Wheel[] Wheels { get; init; }
 }
 
 /// <summary>

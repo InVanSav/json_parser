@@ -9,7 +9,7 @@ public record Order
     public string OrderId { get; init; }
 
     [JsonParserPropertyName("items")]
-    public IReadOnlyCollection<OrderItem> Items { get; init; }
+    public OrderItem[] Items { get; init; }
 
     [JsonParserPropertyName("totalAmount")]
     public double TotalAmount { get; init; }
