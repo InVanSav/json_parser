@@ -1,6 +1,4 @@
-using JsonParser.Attributes;
-
-namespace JsonParser.Entities;
+namespace JsonParser.JsonParser.Tests.Entities;
 
 /// <summary>
 /// Заказ для тестов

@@ -1,6 +1,4 @@
-using JsonParser.Attributes;
-
-namespace JsonParser.Entities;
+namespace JsonParser.Tests.Entities;
 
 /// <summary>
 /// Пользователь для тестов
