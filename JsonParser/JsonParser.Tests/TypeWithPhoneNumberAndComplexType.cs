@@ -99,4 +99,16 @@ public class TypeWithPhoneNumberAndComplexType
         result.IsSuccess.Should().BeFalse();
         result.ErrorMessages.Should().ContainSingle("Свойство PhoneNumber: не найдено в JSON.");
     }
+
+    [Fact]
+    public void Deserialize_ShouldReturnError_ForInvalidNestedObject()
+    {
+        var json =
+            "{\"name\": \"John Doe\", \"age\": 30, \"phoneNumber\": {\"phoneNumberText\" :\"+79991234567\"}, \"address\": {\"street\": \"Main St\", \"city\": 123, \"zipCode\": \"12345\"}}";
+
+        var result = CustomJsonParser.Deserialize<User>(json);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorMessages.Should().ContainSingle("Свойство City: не является строкой.");
+    }
 }

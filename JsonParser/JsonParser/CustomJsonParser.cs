@@ -16,10 +16,16 @@ public static class CustomJsonParser
     /// <returns><see cref="JsonParsingResult{T}"/></returns>
     public static JsonParsingResult<T> Deserialize<T>(string jsonString)
     {
-        var errors = new List<string>();
-        var result = (T)Activator.CreateInstance(typeof(T))!;
+        if (string.IsNullOrWhiteSpace(jsonString))
+            return JsonParsingResult<T>.Failure(new List<string> {"JSON строка не может быть null."});
 
-        var jsonObject = JsonDocument.Parse(jsonString).RootElement;
+        var jsonParsingResult = ParseJson(jsonString);
+        if (!jsonParsingResult.IsSuccess)
+            return JsonParsingResult<T>.Failure(jsonParsingResult.ErrorMessages);
+
+        var errors = new List<string>();
+        var jsonObject = jsonParsingResult.Data;
+        var result = (T)Activator.CreateInstance(typeof(T))!;
 
         foreach (var prop in typeof(T).GetProperties())
         {
@@ -100,6 +106,18 @@ public static class CustomJsonParser
 
     private static bool IsEnumerableType(PropertyInfo prop)
         => prop.PropertyType.GetInterface(typeof(IEnumerable<>).Name) != null && prop.PropertyType != typeof(string);
+
+    private static JsonParsingResult<JsonElement> ParseJson(string jsonString)
+    {
+        try
+        {
+            return JsonParsingResult<JsonElement>.Success(JsonDocument.Parse(jsonString).RootElement);
+        }
+        catch
+        {
+            return JsonParsingResult<JsonElement>.Failure(new List<string> {"Ошибка парсинга JSON строки."});
+        }
+    }
 
     private static dynamic? ParseEnumerable(PropertyInfo prop, JsonElement jsonProp, List<string> errors)
     {
