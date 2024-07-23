@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace JsonParser.Entities;
 
 /// <summary>
-/// Номер телефона для тестов
+/// Номер телефона для нормализации
 /// </summary>
 public static class PhoneNumber
 {
