@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace JsonParser.Entities;
+namespace JsonParser;
 
 /// <summary>
 /// Номер телефона для нормализации
