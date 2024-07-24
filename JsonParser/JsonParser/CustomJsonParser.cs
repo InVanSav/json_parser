@@ -77,44 +77,26 @@ public static class CustomJsonParser
         dynamic? value = null;
 
         if (prop.PropertyType == typeof(string))
-        {
             value = prop.Name.Equals("phoneNumberText", StringComparison.OrdinalIgnoreCase)
                 ? ParsePhoneNumber(jsonProp, errors)
                 : ParseString(jsonProp, errors, prop.Name);
-        }
-        else if (prop.PropertyType == typeof(int))
-        {
-            if (jsonProp.TryGetInt32(out var intValue))
-                value = intValue;
-            else
-                errors.Add($"Свойство {prop.Name}: не является целочисленным.");
-        }
-        else if (prop.PropertyType == typeof(double))
-        {
-            if (jsonProp.TryGetDouble(out var doubleValue))
-                value = doubleValue;
-            else
-                errors.Add($"Свойство {prop.Name}: не является числом с плавающей запятой.");
-        }
-        else if (prop.PropertyType.IsArray)
-        {
-            value = ParseArray(prop.PropertyType, jsonProp, errors);
-        }
-        else if (IsComplexType(prop.PropertyType))
-        {
-            var method = GetDeserializer(prop.PropertyType);
-            var sanitizeResult = method?.Invoke(null, new object[] { jsonProp.GetRawText() }) as dynamic;
 
-            if (sanitizeResult?.IsSuccess)
-                value = sanitizeResult.Data;
-            else
-                errors.AddRange(sanitizeResult.ErrorMessages);
-        }
+        else if (prop.PropertyType == typeof(double) && jsonProp.TryGetDouble(out var doubleValue))
+            value = doubleValue;
+
+        else if (prop.PropertyType == typeof(int) && jsonProp.TryGetInt32(out var intValue))
+            value = intValue;
+
+        else if (prop.PropertyType.IsArray)
+            value = ParseArray(prop.PropertyType, jsonProp, errors);
+
+        else if (IsComplexType(prop.PropertyType))
+            value = ParseComplexType(prop.PropertyType, jsonProp, errors);
 
         return value;
     }
 
-    private static MethodInfo? GetDeserializer(Type type) 
+    private static MethodInfo? GetDeserializer(Type type)
         => typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(type);
 
     private static bool IsComplexType(Type type)
@@ -145,6 +127,21 @@ public static class CustomJsonParser
         var toArrayMethod = listType.GetMethod("ToArray");
 
         return toArrayMethod?.Invoke(resultList, null);
+    }
+
+    private static dynamic? ParseComplexType(Type propertyType, JsonElement jsonProp, List<string> errors)
+    {
+        dynamic? value = null;
+
+        var method = GetDeserializer(propertyType);
+        var sanitizeResult = method?.Invoke(null, new object[] { jsonProp.GetRawText() }) as dynamic;
+
+        if (sanitizeResult?.IsSuccess)
+            value = sanitizeResult.Data;
+        else
+            errors.AddRange(sanitizeResult.ErrorMessages);
+
+        return value;
     }
 
     private static string? ParsePhoneNumber(JsonElement jsonProp, List<string> errors)

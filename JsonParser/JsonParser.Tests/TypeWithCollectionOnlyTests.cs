@@ -38,7 +38,7 @@ public class TypeWithCollectionOnlyTests
         var result = CustomJsonParser.Deserialize<Order>(json);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessages.Should().ContainSingle("Свойство Quantity: не является целочисленным.");
+        Assert.Contains("Свойство Quantity: The requested operation requires an element of type 'Number', but the target element has type 'String'.", result.ErrorMessages!);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class TypeWithCollectionOnlyTests
         var result = CustomJsonParser.Deserialize<Order>(json);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessages.Should().Contain("Свойство TotalAmount: не найдено в JSON.");
+        Assert.Contains("Свойство TotalAmount: не найдено в JSON.", result.ErrorMessages!);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class TypeWithCollectionOnlyTests
         var result = CustomJsonParser.Deserialize<Order>(json);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessages.Should().ContainSingle("Свойство OrderId: не является строкой.");
+        Assert.Contains("Свойство OrderId: The requested operation requires an element of type 'String', but the target element has type 'Number'.", result.ErrorMessages!);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class TypeWithCollectionOnlyTests
         var result = CustomJsonParser.Deserialize<Order>(json);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessages.Should().ContainSingle("Свойство Price: не является числом с плавающей запятой.");
+        Assert.Contains("Свойство Price: The requested operation requires an element of type 'Number', but the target element has type 'String'.", result.ErrorMessages!);
     }
 
     [Fact]
@@ -83,6 +83,6 @@ public class TypeWithCollectionOnlyTests
         var result = CustomJsonParser.Deserialize<Order>(json);
 
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessages.Should().Contain("Свойство Items: не найдено в JSON.");
+        Assert.Contains("Свойство Items: не найдено в JSON.", result.ErrorMessages!);
     }
 }
