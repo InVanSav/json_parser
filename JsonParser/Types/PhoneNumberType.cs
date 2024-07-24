@@ -21,7 +21,7 @@ public class PhoneNumberType : ParsableType
         if (PhoneNumber.TryParse(str, out var phoneNumber))
             return phoneNumber;
 
-        errors.Add("Свойство PhoneNumberText: не является валидным номером телефона.");
+        errors.Add($"Свойство {prop.Name}: не является валидным номером телефона.");
 
         return null;
     }
