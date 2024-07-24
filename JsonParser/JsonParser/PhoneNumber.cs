@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using JsonParser.Attributes;
 
 namespace JsonParser;
 
@@ -10,6 +11,7 @@ public class PhoneNumber
     /// <summary>
     /// Строковое представление номера телефона
     /// </summary>
+    [PhoneNumberProperty]
     [JsonParserPropertyName("phoneNumberText")]
     public string PhoneNumberText { get; set; }
 

@@ -1,4 +1,4 @@
-namespace JsonParser;
+namespace JsonParser.Attributes;
 
 /// <summary>
 /// Кастомный аттрибут для сопоставления имени свойства при сериализации JSON

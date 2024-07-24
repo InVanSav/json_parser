@@ -1,3 +1,5 @@
+using JsonParser.Attributes;
+
 namespace JsonParser.Tests.Entities;
 
 /// <summary>

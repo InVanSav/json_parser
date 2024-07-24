@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using System.Text.Json;
+using JsonParser.Attributes;
 
 namespace JsonParser;
 
@@ -76,10 +77,11 @@ public static class CustomJsonParser
     {
         dynamic? value = null;
 
-        if (prop.PropertyType == typeof(string))
-            value = prop.Name.Equals("phoneNumberText", StringComparison.OrdinalIgnoreCase)
-                ? ParsePhoneNumber(jsonProp, errors)
-                : ParseString(jsonProp, errors, prop.Name);
+        if (prop.GetCustomAttribute<PhoneNumberPropertyAttribute>() != null)
+            value = ParsePhoneNumber(jsonProp, errors);
+
+        else if (prop.PropertyType == typeof(string))
+            value = ParseString(jsonProp, errors, prop.Name);
 
         else if (prop.PropertyType == typeof(double) && jsonProp.TryGetDouble(out var doubleValue))
             value = doubleValue;
@@ -124,9 +126,7 @@ public static class CustomJsonParser
                 errors.AddRange(itemResult?.ErrorMessages ?? new List<string>());
         }
 
-        var toArrayMethod = listType.GetMethod("ToArray");
-
-        return toArrayMethod?.Invoke(resultList, null);
+        return resultList is not null ? ConvertListToArray(resultList, listType) : null;
     }
 
     private static dynamic? ParseComplexType(Type propertyType, JsonElement jsonProp, List<string> errors)
@@ -152,6 +152,7 @@ public static class CustomJsonParser
             return phoneNumber;
 
         errors.Add("Свойство PhoneNumberText: не является валидным номером телефона.");
+
         return null;
     }
 
@@ -163,5 +164,11 @@ public static class CustomJsonParser
             errors.Add($"Свойство {propName}: строка не может быть пустой или содержать только пробелы.");
 
         return str.Trim();
+    }
+
+    private static object? ConvertListToArray(IList list, Type listType)
+    {
+        var toArrayMethod = listType.GetMethod("ToArray");
+        return toArrayMethod?.Invoke(list, null);
     }
 }

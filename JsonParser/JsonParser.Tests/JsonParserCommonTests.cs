@@ -29,6 +29,17 @@ public class JsonParserCommonTests
     }
 
     [Fact]
+    public void Deserialize_ShouldParseJson_ForModelWithoutAttributes()
+    {
+        var json = "{\"WithoutAttributeProperty\": 42}";
+
+        var result = CustomJsonParser.Deserialize<WithoutAttribute>(json);
+
+        result.IsSuccess.Should().BeFalse();
+        Assert.Contains("Аттрибут свойства WithoutAttributeProperty: не найдено.", result.ErrorMessages!);
+    }
+
+    [Fact]
     public void Deserialize_ShouldReturnErrors_ForTypeMismatch()
     {
         var json = "{\"address\":123,\"rooms\":[],\"floors\":\"Not an array\",\"price\":\"Not a number\"}";
