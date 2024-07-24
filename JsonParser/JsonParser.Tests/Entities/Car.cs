@@ -1,6 +1,6 @@
 using JsonParser.Attributes;
 
-namespace JsonParser.Entities;
+namespace JsonParser.Tests.Entities;
 
 /// <summary>
 /// Автомобиль с колесами для тестов
@@ -17,7 +17,7 @@ public record Car
     public int WheelCount { get; init; }
 
     [JsonParserPropertyName("model")] 
-    public IReadOnlyCollection<Wheel> Wheels { get; init; }
+    public Wheel[] Wheels { get; init; }
 }
 
 /// <summary>
