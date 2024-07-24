@@ -1,7 +1,7 @@
-using System.Collections;
 using System.Reflection;
 using System.Text.Json;
 using JsonParser.Attributes;
+using JsonParser.Types;
 
 namespace JsonParser;
 
@@ -10,6 +10,25 @@ namespace JsonParser;
 /// </summary>
 public static class CustomJsonParser
 {
+    /// <summary>
+    /// Хранит в себе все типы, которые парсер может осилить. Типы являются наследниками <see cref="ParsableType"/>
+    /// </summary>
+    private static IReadOnlyCollection<ParsableType> _parsableTypes;
+
+    /// <summary>
+    /// <inheritdoc cref="CustomJsonParser"/>
+    /// </summary>
+    static CustomJsonParser()
+    {
+        var oneTimeCodeInheritors = Assembly
+            .GetAssembly(typeof(ParsableType))!
+            .GetTypes()
+            .Where(t => t.IsSubclassOf(typeof(ParsableType)) && !t.IsAbstract)
+            .Select(t => (ParsableType)Activator.CreateInstance(t)!);
+
+        _parsableTypes = oneTimeCodeInheritors.ToArray();
+    }
+
     /// <summary>
     /// Выполнить десериализацию
     /// </summary>
@@ -46,7 +65,9 @@ public static class CustomJsonParser
 
             try
             {
-                var value = GetValue(prop, jsonProp, errors);
+                var parser = _parsableTypes.FirstOrDefault(pt => pt.CanParse(prop));
+
+                var value = parser?.Parse(prop, jsonProp, errors);
                 if (value is not null)
                     prop.SetValue(result, value);
             }
@@ -73,102 +94,6 @@ public static class CustomJsonParser
         }
     }
 
-    private static dynamic? GetValue(PropertyInfo prop, JsonElement jsonProp, List<string> errors)
-    {
-        dynamic? value = null;
-
-        if (prop.GetCustomAttribute<PhoneNumberPropertyAttribute>() != null)
-            value = ParsePhoneNumber(jsonProp, errors);
-
-        else if (prop.PropertyType == typeof(string))
-            value = ParseString(jsonProp, errors, prop.Name);
-
-        else if (prop.PropertyType == typeof(double) && jsonProp.TryGetDouble(out var doubleValue))
-            value = doubleValue;
-
-        else if (prop.PropertyType == typeof(int) && jsonProp.TryGetInt32(out var intValue))
-            value = intValue;
-
-        else if (prop.PropertyType.IsArray)
-            value = ParseArray(prop.PropertyType, jsonProp, errors);
-
-        else if (IsComplexType(prop.PropertyType))
-            value = ParseComplexType(prop.PropertyType, jsonProp, errors);
-
-        return value;
-    }
-
-    private static MethodInfo? GetDeserializer(Type type)
+    public static MethodInfo? GetDeserializingMethod(Type type)
         => typeof(CustomJsonParser).GetMethod("Deserialize")?.MakeGenericMethod(type);
-
-    private static bool IsComplexType(Type type)
-        => type is { IsPrimitive: false, IsClass: true } && type != typeof(string);
-
-    private static dynamic? ParseArray(Type arrayType, JsonElement jsonProp, List<string> errors)
-    {
-        if (jsonProp.ValueKind != JsonValueKind.Array)
-        {
-            errors.Add("Ожидался массив в JSON, но был найден другой тип.");
-            return null;
-        }
-
-        var elementType = arrayType.GetElementType();
-        var listType = typeof(List<>).MakeGenericType(elementType!);
-        var resultList = Activator.CreateInstance(listType) as IList;
-        var method = GetDeserializer(elementType!);
-
-        foreach (var element in jsonProp.EnumerateArray())
-        {
-            var itemResult = method?.Invoke(null, new object[] { element.GetRawText() }) as dynamic;
-            if (itemResult?.IsSuccess is true)
-                resultList?.Add(itemResult.Data);
-            else
-                errors.AddRange(itemResult?.ErrorMessages ?? new List<string>());
-        }
-
-        return resultList is not null ? ConvertListToArray(resultList, listType) : null;
-    }
-
-    private static dynamic? ParseComplexType(Type propertyType, JsonElement jsonProp, List<string> errors)
-    {
-        dynamic? value = null;
-
-        var method = GetDeserializer(propertyType);
-        var sanitizeResult = method?.Invoke(null, new object[] { jsonProp.GetRawText() }) as dynamic;
-
-        if (sanitizeResult?.IsSuccess)
-            value = sanitizeResult.Data;
-        else
-            errors.AddRange(sanitizeResult.ErrorMessages);
-
-        return value;
-    }
-
-    private static string? ParsePhoneNumber(JsonElement jsonProp, List<string> errors)
-    {
-        var str = jsonProp.GetString() ?? string.Empty;
-
-        if (PhoneNumber.TryParse(str, out var phoneNumber))
-            return phoneNumber;
-
-        errors.Add("Свойство PhoneNumberText: не является валидным номером телефона.");
-
-        return null;
-    }
-
-    private static string ParseString(JsonElement jsonProp, List<string> errors, string propName)
-    {
-        var str = jsonProp.GetString() ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(str))
-            errors.Add($"Свойство {propName}: строка не может быть пустой или содержать только пробелы.");
-
-        return str.Trim();
-    }
-
-    private static object? ConvertListToArray(IList list, Type listType)
-    {
-        var toArrayMethod = listType.GetMethod("ToArray");
-        return toArrayMethod?.Invoke(list, null);
-    }
 }
