@@ -20,13 +20,13 @@ public static class CustomJsonParser
     /// </summary>
     static CustomJsonParser()
     {
-        var oneTimeCodeInheritors = Assembly
+        var parsableTypeInheritors = Assembly
             .GetAssembly(typeof(ParsableType))!
             .GetTypes()
             .Where(t => t.IsSubclassOf(typeof(ParsableType)) && !t.IsAbstract)
             .Select(t => (ParsableType)Activator.CreateInstance(t)!);
 
-        _parsableTypes = oneTimeCodeInheritors.ToArray();
+        _parsableTypes = parsableTypeInheritors.ToArray();
     }
 
     /// <summary>
